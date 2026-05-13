@@ -1,0 +1,8 @@
+environment    = "personal"
+aws_profile    = "quantified-self-dashboard-dev"
+aws_region     = "us-east-1"
+account_id     = "your-account-id"
+sheets_url     = "your-google-sheets-csv-export-url"
+ses_sender     = "your-verified-email@example.com"
+ses_recipient  = "your-verified-email@example.com"
+dashboard_name = "My Quantified Self Dashboard"
