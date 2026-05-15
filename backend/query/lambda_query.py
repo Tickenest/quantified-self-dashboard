@@ -107,6 +107,7 @@ def run_query(conn: duckdb.DuckDBPyConnection, query_type: str, params: dict) ->
     elif query_type == "exercise_correlation":
         # Average next-day weight change by exercise type
         # Explodes multi-exercise days so each activity is counted individually
+        # Normalizes activity names to collapse variants (e.g. "30 minute walk" -> "walking")
         sql = f"""
             WITH daily AS (
                 SELECT date, weight,
@@ -118,15 +119,38 @@ def run_query(conn: duckdb.DuckDBPyConnection, query_type: str, params: dict) ->
             ),
             exploded AS (
                 SELECT date, next_weight - weight AS weight_change,
-                    TRIM(ex) AS activity
+                    TRIM(ex) AS raw_activity
                 FROM daily,
                 UNNEST(string_split(exercise, ',')) AS t(ex)
                 WHERE next_weight IS NOT NULL
+            ),
+            normalized AS (
+                SELECT date, weight_change,
+                    CASE
+                        WHEN LOWER(raw_activity) LIKE '%walk%' THEN 'walking'
+                        WHEN LOWER(raw_activity) LIKE '%bike%'
+                          OR LOWER(raw_activity) LIKE '%cycling%' THEN 'cycling'
+                        WHEN LOWER(raw_activity) LIKE '%run%'
+                          OR LOWER(raw_activity) LIKE '%treadmill%' THEN 'running'
+                        WHEN LOWER(raw_activity) LIKE '%disc golf%' THEN 'disc golf'
+                        WHEN LOWER(raw_activity) LIKE '%ring fit%' THEN 'ring fit'
+                        WHEN LOWER(raw_activity) LIKE '%ddr%' THEN 'ddr'
+                        WHEN LOWER(raw_activity) LIKE '%weight%'
+                          OR LOWER(raw_activity) LIKE '%strength%' THEN 'weight training'
+                        WHEN LOWER(raw_activity) LIKE '%swim%' THEN 'swimming'
+                        WHEN LOWER(raw_activity) LIKE '%basketball%' THEN 'basketball'
+                        WHEN LOWER(raw_activity) LIKE '%soccer%' THEN 'soccer'
+                        WHEN LOWER(raw_activity) LIKE '%yoga%' THEN 'yoga'
+                        WHEN LOWER(raw_activity) LIKE '%rest%' THEN NULL
+                        ELSE LOWER(TRIM(raw_activity))
+                    END AS activity
+                FROM exploded
             )
             SELECT activity,
                 ROUND(AVG(weight_change), 2) AS avg_next_day_change,
                 COUNT(*) AS sample_size
-            FROM exploded
+            FROM normalized
+            WHERE activity IS NOT NULL
             GROUP BY activity
             HAVING COUNT(*) >= 3
             ORDER BY avg_next_day_change ASC
