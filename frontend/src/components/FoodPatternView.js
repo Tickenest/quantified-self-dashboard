@@ -35,13 +35,17 @@ function getDateRange(timeWindow) {
   const start = new Date();
   if (timeWindow < 9999) {
     start.setDate(start.getDate() - timeWindow);
+    return {
+      start_date: start.toISOString().split('T')[0],
+      end_date: end.toISOString().split('T')[0],
+      limit: timeWindow,
+    };
   } else {
-    start.setFullYear(2025, 0, 1);
+    return {
+      end_date: end.toISOString().split('T')[0],
+      limit: 9999,
+    };
   }
-  return {
-    start_date: start.toISOString().split('T')[0],
-    end_date: end.toISOString().split('T')[0],
-  };
 }
 
 function FoodDay({ day }) {
@@ -76,13 +80,13 @@ function FoodPatternView({ apiUrl, timeWindow }) {
   useEffect(() => {
     if (!apiUrl) return;
     setLoading(true);
-    const { start_date, end_date } = getDateRange(timeWindow);
+    const params = getDateRange(timeWindow);
     fetch(`${apiUrl}query`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         query_type: 'food_entries',
-        params: { start_date, end_date, limit: 365 },
+        params,
       }),
     })
       .then(r => r.json())

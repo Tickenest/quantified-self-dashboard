@@ -33,7 +33,8 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 function WeightTrendChart({ apiUrl, timeWindow }) {
-  const { data, loading, error } = useQuery(apiUrl, 'weight_moving_avg', timeWindow, { limit: 365 });
+  const limit = timeWindow >= 9999 ? 9999 : Math.max(timeWindow, 365);
+  const { data, loading, error } = useQuery(apiUrl, 'weight_moving_avg', timeWindow, { limit });
 
   if (loading) return <LoadingBar />;
   if (error) return <div className="error-text">error: {error}</div>;

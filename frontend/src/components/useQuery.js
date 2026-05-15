@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 function getDateRange(timeWindow) {
-  if (timeWindow >= 9999) return {};
+  if (timeWindow >= 9999) return { limit: 9999 };
   const end = new Date();
   const start = new Date();
   start.setDate(start.getDate() - timeWindow);

@@ -32,7 +32,8 @@ function normalizeActivity(exercise) {
 }
 
 function ExerciseBreakdown({ apiUrl, timeWindow }) {
-  const { data, loading, error } = useQuery(apiUrl, 'exercise_entries', timeWindow, { limit: 365 });
+  const limit = timeWindow >= 9999 ? 9999 : Math.max(timeWindow, 365);
+  const { data, loading, error } = useQuery(apiUrl, 'exercise_entries', timeWindow, { limit });
 
   const chartData = useMemo(() => {
     if (!data) return [];

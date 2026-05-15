@@ -7,7 +7,8 @@ import { useQuery } from './useQuery';
 import LoadingBar from './LoadingBar';
 
 function CorrelationChart({ apiUrl, timeWindow }) {
-  const { data, loading, error } = useQuery(apiUrl, 'exercise_correlation', timeWindow, { limit: 365 });
+  const limit = timeWindow >= 9999 ? 9999 : Math.max(timeWindow, 365);
+  const { data, loading, error } = useQuery(apiUrl, 'exercise_correlation', timeWindow, { limit });
 
   if (loading) return <LoadingBar />;
   if (error) return <div className="error-text">error: {error}</div>;
