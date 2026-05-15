@@ -7,6 +7,7 @@ import FoodPatternView from './components/FoodPatternView';
 import CorrelationChart from './components/CorrelationChart';
 import BriefingPanel from './components/BriefingPanel';
 import ChatInterface from './components/ChatInterface';
+import LearningPanel from './components/LearningPanel';
 import './App.css';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
@@ -60,6 +61,11 @@ function App() {
           <section className="card card--wide">
             <h2 className="card-title">Weight vs Exercise</h2>
             <CorrelationChart apiUrl={API_URL} timeWindow={timeWindow} />
+          </section>
+
+          <section className="card card--wide">
+            <h2 className="card-title">Learning &amp; Reading</h2>
+            <LearningPanel apiUrl={API_URL} timeWindow={timeWindow} />
           </section>
 
           <section className="card card--wide">
