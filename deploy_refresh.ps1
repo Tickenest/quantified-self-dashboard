@@ -10,7 +10,8 @@ $REGION = "us-east-1"
 $ACCOUNT_ID = (aws sts get-caller-identity --query Account --output text --profile $PROFILE)
 $FUNCTION_NAME = "qsd-$Environment-refresh"
 $ECR_REPO = "qsd-$Environment-refresh"
-$ECR_URI = "$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$ECR_REPO"
+$ECR_REGISTRY = "$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com"
+$ECR_URI = "$ECR_REGISTRY/$ECR_REPO"
 $IMAGE_TAG = "latest"
 
 Write-Host "Deploying refresh Lambda for environment: $Environment" -ForegroundColor Cyan
@@ -22,7 +23,8 @@ if ($LASTEXITCODE -ne 0) { Write-Host "Docker build failed" -ForegroundColor Red
 
 # ECR login
 Write-Host "Logging in to ECR..." -ForegroundColor Yellow
-aws ecr get-login-password --region $REGION --profile $PROFILE | docker login --username AWS --password-stdin "$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com"
+$ECR_PASSWORD = aws ecr get-login-password --region $REGION --profile $PROFILE
+docker login --username AWS --password $ECR_PASSWORD $ECR_REGISTRY
 if ($LASTEXITCODE -ne 0) { Write-Host "ECR login failed" -ForegroundColor Red; exit 1 }
 
 # Tag and push

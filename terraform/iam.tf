@@ -92,7 +92,7 @@ resource "aws_iam_role_policy" "agent" {
       {
         Effect   = "Allow"
         Action   = ["bedrock:InvokeModel"]
-        Resource = "arn:aws:bedrock:${var.aws_region}::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+        Resource = "*"
       },
       {
         Effect   = "Allow"

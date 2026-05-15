@@ -102,6 +102,7 @@ def run_specialist(
         response = BEDROCK_CLIENT.invoke_model(
             modelId=MODEL_ID,
             body=json.dumps({
+                "anthropic_version": "bedrock-2023-05-31",
                 "system": system_prompt,
                 "messages": messages,
                 "tools": [query_tool],
@@ -298,6 +299,7 @@ Please synthesize these findings into a response appropriate for the request typ
     response = BEDROCK_CLIENT.invoke_model(
         modelId=MODEL_ID,
         body=json.dumps({
+            "anthropic_version": "bedrock-2023-05-31",
             "system": SUPERVISOR_SYSTEM_PROMPT,
             "messages": [{"role": "user", "content": user_content}],
             "max_tokens": 2048,
