@@ -14,7 +14,11 @@ Write-Host "Deploying frontend for environment: $Environment" -ForegroundColor C
 # Build React app
 Write-Host "Building React app..." -ForegroundColor Yellow
 Set-Location ./frontend
-npm run build
+if ($Environment -eq "personal") {
+    npm run build:personal
+} else {
+    npm run build:demo
+}
 if ($LASTEXITCODE -ne 0) { Write-Host "React build failed" -ForegroundColor Red; Set-Location ..; exit 1 }
 Set-Location ..
 

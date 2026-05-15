@@ -30,3 +30,6 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+frontend/.env.demo
+frontend/.env.personal

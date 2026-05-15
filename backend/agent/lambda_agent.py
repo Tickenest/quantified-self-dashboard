@@ -464,19 +464,39 @@ AGENT_RUNNERS = {
 
 
 def orchestrate(request_type: str, message: str = "") -> str:
-    """Main orchestration: consult specialists, synthesize with supervisor."""
+    """Main orchestration: consult specialists in parallel, synthesize with supervisor."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     tasks = build_specialist_tasks(request_type, message)
-    logger.info(f"Consulting agents: {list(tasks.keys())}")
+    logger.info(f"Consulting agents in parallel: {list(tasks.keys())}")
 
     findings = {}
-    for agent_name, task in tasks.items():
+
+    def run_agent(agent_name, task):
         logger.info(f"Running {agent_name} agent")
         runner = AGENT_RUNNERS[agent_name]
-        findings[agent_name] = runner(task)
+        result = runner(task)
         logger.info(f"{agent_name} agent complete")
+        return agent_name, result
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(run_agent, agent_name, task): agent_name
+            for agent_name, task in tasks.items()
+        }
+        for future in as_completed(futures):
+            agent_name, result = future.result()
+            findings[agent_name] = result
+
+    # Preserve consistent ordering for supervisor
+    ordered_findings = {
+        name: findings[name]
+        for name in ["Fitness", "Food", "Learning", "Gaming"]
+        if name in findings
+    }
 
     logger.info("Running supervisor synthesis")
-    return run_supervisor(request_type, message, findings)
+    return run_supervisor(request_type, message, ordered_findings)
 
 
 # ---------------------------------------------------------------------------

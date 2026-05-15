@@ -11,6 +11,7 @@ logger.setLevel(logging.INFO)
 
 S3_BUCKET = os.environ["S3_BUCKET"]
 S3_KEY = os.environ.get("S3_KEY", "data/life_log.parquet")
+DYNAMODB_TABLE = os.environ.get("DYNAMODB_TABLE", "")
 
 # Valid query types
 QUERY_TYPES = {
@@ -33,6 +34,8 @@ QUERY_TYPES = {
     "full_window",
     "single_day",
     "date_range",
+    # Briefings
+    "get_briefing",
 }
 
 
@@ -286,7 +289,31 @@ def lambda_handler(event, context):
 
         params = body.get("params", {})
 
-        # Load Parquet and run query
+        # get_briefing reads from DynamoDB, not Parquet
+        if query_type == "get_briefing":
+            briefing_type = params.get("briefing_type", "daily_briefing")
+            dynamodb = boto3.resource("dynamodb")
+            table = dynamodb.Table(DYNAMODB_TABLE)
+            response = table.query(
+                KeyConditionExpression=boto3.dynamodb.conditions.Key("briefing_type").eq(briefing_type),
+                ScanIndexForward=False,
+                Limit=1,
+            )
+            items = response.get("Items", [])
+            return {
+                "statusCode": 200,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                },
+                "body": json.dumps({
+                    "query_type": query_type,
+                    "count": len(items),
+                    "data": items,
+                }),
+            }
+
+        # All other queries use DuckDB
         local_path = fetch_parquet_locally()
         conn = duckdb.connect()
         load_parquet(conn, local_path)

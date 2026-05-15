@@ -66,6 +66,11 @@ resource "aws_iam_role_policy" "query" {
       },
       {
         Effect   = "Allow"
+        Action   = ["dynamodb:Query", "dynamodb:GetItem"]
+        Resource = aws_dynamodb_table.briefings.arn
+      },
+      {
+        Effect   = "Allow"
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "arn:aws:logs:*:*:*"
       },

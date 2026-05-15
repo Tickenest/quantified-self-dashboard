@@ -37,8 +37,9 @@ resource "aws_lambda_function" "query" {
 
   environment {
     variables = {
-      S3_BUCKET = aws_s3_bucket.data.bucket
-      S3_KEY    = "data/life_log.parquet"
+      S3_BUCKET      = aws_s3_bucket.data.bucket
+      S3_KEY         = "data/life_log.parquet"
+      DYNAMODB_TABLE = aws_dynamodb_table.briefings.name
     }
   }
 
