@@ -194,7 +194,7 @@ aws s3 mb s3://quantified-self-dashboard-demo-terraform-state --region us-east-1
 
 Create a Google Sheet for your life log with columns: `Date`, `Weight`, `Exercise`, `Training`, `Reading`, `Gaming`, `Food`. Share it as "Anyone with the link can view" and note the CSV export URL.
 
-For the demo environment, load `data/quincy_everyman.csv` into a separate sheet.
+For the demo environment, create a separate Google Sheet and load `data/quincy_everyman.csv` into it. You can do this manually (File → Import in Google Sheets) or use the included `seed_demo_data.py` script with Google Sheets API credentials (see instructions at the top of that file).
 
 ### 4. Configure Environment Files
 

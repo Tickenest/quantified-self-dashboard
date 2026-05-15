@@ -73,14 +73,3 @@ resource "aws_lambda_permission" "agent_apigw" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
 }
-
-# ---------------------------------------------------------------------------
-# Briefings route — frontend fetches latest briefings from DynamoDB via query Lambda
-# We add a dedicated GET /briefings route handled by a small addition to query Lambda
-# ---------------------------------------------------------------------------
-
-resource "aws_apigatewayv2_route" "briefings" {
-  api_id    = aws_apigatewayv2_api.main.id
-  route_key = "GET /briefings"
-  target    = "integrations/${aws_apigatewayv2_integration.query.id}"
-}

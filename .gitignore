@@ -31,5 +31,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Google Sheets API credentials (seed_demo_data.py)
+credentials.json
+token.json
+
 frontend/.env.demo
 frontend/.env.personal
