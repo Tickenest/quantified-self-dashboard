@@ -21,3 +21,21 @@ resource "aws_dynamodb_table" "briefings" {
 
   tags = local.common_tags
 }
+
+resource "aws_dynamodb_table" "token_budget" {
+  name         = "${local.prefix}-token-budget"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "date"
+
+  attribute {
+    name = "date"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
+
+  tags = local.common_tags
+}

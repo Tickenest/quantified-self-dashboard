@@ -9,9 +9,58 @@ logger.setLevel(logging.INFO)
 
 BEDROCK_CLIENT = boto3.client("bedrock-runtime", region_name=os.environ.get("AWS_REGION", "us-east-1"))
 LAMBDA_CLIENT = boto3.client("lambda")
+DYNAMODB = boto3.resource("dynamodb")
 
 MODEL_ID = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
 QUERY_LAMBDA_NAME = os.environ["QUERY_LAMBDA_NAME"]
+TOKEN_BUDGET_TABLE = os.environ.get("TOKEN_BUDGET_TABLE", "")
+DAILY_TOKEN_BUDGET = int(os.environ.get("DAILY_TOKEN_BUDGET", "120000"))
+
+# ---------------------------------------------------------------------------
+# Token budget
+# ---------------------------------------------------------------------------
+
+def get_today_utc() -> str:
+    return datetime.utcnow().strftime("%Y-%m-%d")
+
+
+def get_tokens_used_today() -> int:
+    """Return total tokens used today from DynamoDB."""
+    if not TOKEN_BUDGET_TABLE:
+        return 0
+    try:
+        table = DYNAMODB.Table(TOKEN_BUDGET_TABLE)
+        response = table.get_item(Key={"date": get_today_utc()})
+        return int(response.get("Item", {}).get("tokens_used", 0))
+    except Exception as e:
+        logger.warning(f"Could not read token budget: {e}")
+        return 0
+
+
+def record_tokens_used(tokens: int) -> None:
+    """Add tokens to today's usage total in DynamoDB."""
+    if not TOKEN_BUDGET_TABLE or tokens <= 0:
+        return
+    try:
+        table = DYNAMODB.Table(TOKEN_BUDGET_TABLE)
+        table.update_item(
+            Key={"date": get_today_utc()},
+            UpdateExpression="ADD tokens_used :t SET #ttl = :ttl",
+            ExpressionAttributeNames={"#ttl": "ttl"},
+            ExpressionAttributeValues={
+                ":t": tokens,
+                ":ttl": int(datetime.utcnow().timestamp()) + (7 * 24 * 60 * 60),
+            },
+        )
+    except Exception as e:
+        logger.warning(f"Could not record token usage: {e}")
+
+
+def check_budget() -> tuple[bool, int]:
+    """Return (within_budget, tokens_used_today)."""
+    used = get_tokens_used_today()
+    return used < DAILY_TOKEN_BUDGET, used
+
 
 # ---------------------------------------------------------------------------
 # Request types
@@ -96,6 +145,7 @@ def run_specialist(
     }
 
     messages = [{"role": "user", "content": task}]
+    total_tokens = 0
 
     # Agentic loop — allow multiple tool calls
     for _ in range(10):  # max iterations
@@ -113,10 +163,15 @@ def run_specialist(
         content = result["content"]
         stop_reason = result["stop_reason"]
 
+        # Accumulate token usage
+        usage = result.get("usage", {})
+        total_tokens += usage.get("input_tokens", 0) + usage.get("output_tokens", 0)
+
         # Append assistant response to messages
         messages.append({"role": "assistant", "content": content})
 
         if stop_reason == "end_turn":
+            record_tokens_used(total_tokens)
             # Extract final text response
             text_blocks = [b["text"] for b in content if b["type"] == "text"]
             return "\n".join(text_blocks).strip()
@@ -306,6 +361,8 @@ Please synthesize these findings into a response appropriate for the request typ
         }),
     )
     result = json.loads(response["body"].read())
+    usage = result.get("usage", {})
+    record_tokens_used(usage.get("input_tokens", 0) + usage.get("output_tokens", 0))
     text_blocks = [b["text"] for b in result["content"] if b["type"] == "text"]
     return "\n".join(text_blocks).strip()
 
@@ -527,6 +584,25 @@ def lambda_handler(event, context):
                 "statusCode": 400,
                 "body": json.dumps({"error": f"Unknown request_type: {request_type}"}),
             }
+
+        # Check token budget for interactive requests only
+        # Scheduled briefings (daily/weekly) always run regardless of budget
+        if request_type in ("chat", "recommendations"):
+            within_budget, tokens_used = check_budget()
+            if not within_budget:
+                logger.warning(f"Daily token budget exceeded: {tokens_used}/{DAILY_TOKEN_BUDGET}")
+                return {
+                    "statusCode": 429,
+                    "headers": {
+                        "Content-Type": "application/json",
+                        "Access-Control-Allow-Origin": "*",
+                    },
+                    "body": json.dumps({
+                        "error": "Daily token budget exceeded. Chat will be available again tomorrow.",
+                        "tokens_used": tokens_used,
+                        "daily_budget": DAILY_TOKEN_BUDGET,
+                    }),
+                }
 
         response_text = orchestrate(request_type, message)
 

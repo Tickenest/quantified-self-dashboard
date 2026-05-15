@@ -106,6 +106,11 @@ resource "aws_iam_role_policy" "agent" {
       },
       {
         Effect   = "Allow"
+        Action   = ["dynamodb:GetItem", "dynamodb:UpdateItem"]
+        Resource = aws_dynamodb_table.token_budget.arn
+      },
+      {
+        Effect   = "Allow"
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "arn:aws:logs:*:*:*"
       },

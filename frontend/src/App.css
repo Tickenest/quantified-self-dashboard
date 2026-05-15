@@ -390,6 +390,67 @@ body {
 }
 
 /* -------------------------------------------------------------------------
+   Chat Password Gate
+------------------------------------------------------------------------- */
+
+.chat-password-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 0;
+}
+
+.chat-password-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.chat-password-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.chat-password-input {
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.92rem;
+  padding: 10px 16px;
+  transition: border-color 0.15s;
+  width: 220px;
+}
+
+.chat-password-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.chat-password-input.error {
+  border-color: var(--negative);
+  animation: shake 0.3s ease;
+}
+
+.chat-password-error {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--negative);
+  letter-spacing: 0.04em;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-6px); }
+  75%       { transform: translateX(6px); }
+}
+
+/* -------------------------------------------------------------------------
    Chat Interface
 ------------------------------------------------------------------------- */
 

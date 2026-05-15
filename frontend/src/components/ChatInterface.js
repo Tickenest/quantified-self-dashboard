@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import LoadingBar from './LoadingBar';
 
+const CHAT_PASSWORD = process.env.REACT_APP_CHAT_PASSWORD || '';
+
 const SUGGESTIONS = [
   'How is my weight trending?',
   'What should I eat this week?',
@@ -10,17 +12,62 @@ const SUGGESTIONS = [
   'How was my week overall?',
 ];
 
+function PasswordGate({ onUnlock }) {
+  const [input, setInput] = useState('');
+  const [error, setError] = useState(false);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (input === CHAT_PASSWORD) {
+      onUnlock();
+    } else {
+      setError(true);
+      setInput('');
+      setTimeout(() => setError(false), 2000);
+    }
+  }
+
+  return (
+    <div className="chat-password-gate">
+      <div className="chat-password-label">
+        chat requires a password
+      </div>
+      <form className="chat-password-form" onSubmit={handleSubmit}>
+        <input
+          type="password"
+          className={`chat-password-input ${error ? 'error' : ''}`}
+          placeholder="enter password"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          autoFocus
+        />
+        <button type="submit" className="chat-send-btn">
+          unlock
+        </button>
+      </form>
+      {error && (
+        <div className="chat-password-error">incorrect password</div>
+      )}
+    </div>
+  );
+}
+
 function ChatInterface({ apiUrl }) {
+  const [unlocked, setUnlocked] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const historyRef = useRef(null);
 
   useEffect(() => {
-    if (historyRef.current) {
-      historyRef.current.scrollTop = historyRef.current.scrollHeight;
-    }
-  }, [messages, loading]);
+    const saved = localStorage.getItem('chatUnlocked');
+    if (saved === 'true') setUnlocked(true);
+  }, []);
+
+  function handleUnlock() {
+    setUnlocked(true);
+    localStorage.setItem('chatUnlocked', 'true');
+  }
 
   function detectRequestType(text) {
     const lower = text.toLowerCase();
@@ -55,8 +102,16 @@ function ChatInterface({ apiUrl }) {
       });
       const data = await response.json();
       const body = typeof data.body === 'string' ? JSON.parse(data.body) : data;
-      const replyText = body.response || body.error || 'No response received.';
-      setMessages(prev => [...prev, { role: 'assistant', text: replyText }]);
+
+      if (response.status === 429 || body.error?.includes('budget')) {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          text: body.error || 'Daily chat budget has been reached. Try again tomorrow.',
+        }]);
+      } else {
+        const replyText = body.response || body.error || 'No response received.';
+        setMessages(prev => [...prev, { role: 'assistant', text: replyText }]);
+      }
     } catch (err) {
       setMessages(prev => [...prev, { role: 'assistant', text: `Error: ${err.message}` }]);
     } finally {
@@ -69,6 +124,16 @@ function ChatInterface({ apiUrl }) {
       e.preventDefault();
       sendMessage(input);
     }
+  }
+
+  useEffect(() => {
+    if (historyRef.current) {
+      historyRef.current.scrollTop = historyRef.current.scrollHeight;
+    }
+  }, [messages, loading]);
+
+  if (!unlocked) {
+    return <PasswordGate onUnlock={handleUnlock} />;
   }
 
   return (

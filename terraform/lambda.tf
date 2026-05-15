@@ -71,7 +71,9 @@ resource "aws_lambda_function" "agent" {
 
   environment {
     variables = {
-      QUERY_LAMBDA_NAME = aws_lambda_function.query.function_name
+      QUERY_LAMBDA_NAME  = aws_lambda_function.query.function_name
+      TOKEN_BUDGET_TABLE = aws_dynamodb_table.token_budget.name
+      DAILY_TOKEN_BUDGET = "120000"
     }
   }
 
