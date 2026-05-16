@@ -31,6 +31,7 @@ resource "aws_cloudwatch_event_rule" "daily_briefing" {
   name                = "${local.prefix}-daily-briefing"
   description         = "Daily morning briefing"
   schedule_expression = var.daily_briefing_schedule
+  is_enabled          = var.enable_briefings
   tags                = local.common_tags
 }
 
@@ -60,6 +61,7 @@ resource "aws_cloudwatch_event_rule" "weekly_briefing" {
   name                = "${local.prefix}-weekly-briefing"
   description         = "Weekly Sunday briefing"
   schedule_expression = var.weekly_briefing_schedule
+  is_enabled          = var.enable_briefings
   tags                = local.common_tags
 }
 

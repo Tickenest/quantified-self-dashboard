@@ -1,3 +1,9 @@
+variable "enable_briefings" {
+  description = "Whether to enable scheduled daily and weekly briefing EventBridge rules"
+  type        = bool
+  default     = false
+}
+
 variable "aws_region" {
   description = "AWS region for all resources"
   type        = string
@@ -42,7 +48,7 @@ variable "dashboard_name" {
 variable "daily_briefing_schedule" {
   description = "EventBridge cron schedule for daily briefing (UTC)"
   type        = string
-  default     = "cron(0 8 * * ? *)"  # 4 AM ET
+  default     = "cron(0 11 * * ? *)"  # 7 AM ET
 }
 
 variable "weekly_briefing_schedule" {
