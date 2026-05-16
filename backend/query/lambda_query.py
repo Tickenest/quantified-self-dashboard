@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import tempfile
+from decimal import Decimal
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -12,6 +13,14 @@ logger.setLevel(logging.INFO)
 S3_BUCKET = os.environ["S3_BUCKET"]
 S3_KEY = os.environ.get("S3_KEY", "data/life_log.parquet")
 DYNAMODB_TABLE = os.environ.get("DYNAMODB_TABLE", "")
+
+
+class DecimalEncoder(json.JSONEncoder):
+    """Handle DynamoDB Decimal types that json.dumps can't serialize."""
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return int(obj) if obj % 1 == 0 else float(obj)
+        return super().default(obj)
 
 # Valid query types
 QUERY_TYPES = {
@@ -334,7 +343,7 @@ def lambda_handler(event, context):
                     "query_type": query_type,
                     "count": len(items),
                     "data": items,
-                }),
+                }, cls=DecimalEncoder),
             }
 
         # All other queries use DuckDB
